@@ -2,30 +2,25 @@ const { exec } = require('child_process');
 const { port, shutdown_command } = require('./config.json');
 const express = require('express');
 const http = require('http');
-const WebSocket = require('ws');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 
-wss.on('connection', ws => {
-    ws.on('message', (message) => {
-        message = message.toString();
-        
-        console.log('Received:', message);
-        if (message === 'shutdown') {
-            ws.send('Shutdown command received');
-            exec(shutdown_command, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`exec error: ${error}`);
-                    ws.send('Shutdown command failed.');
-                } else {
-                    ws.send('Shutdown command executed.');
-                }
-            });
+app.get('/shutdown', (req, res) => {
+    exec(shutdown_command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            res.status(500).send('An error occured while shutting down the client computer.');
+            return;
         }
+        console.log(`stdout: ${stdout}`);
+        console.error(`stderr: ${stderr}`);
+        res.status(200).send('Client is shutting down...');
     });
+});
 
+app.get('/ping', (req, res) => {
+    res.status(200).send('Client is online.');
 });
 
 server.listen(port, () => {
