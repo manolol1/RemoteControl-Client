@@ -1,4 +1,5 @@
 {
 	"port": 2052,
-	"shutdown_command": "shutdown -h now"
+	"shutdown_command": "shutdown -h now",
+	"reboot_command": "reboot"
 }
