@@ -1,5 +1,6 @@
 {
 	"port": 2052,
 	"shutdown_command": "shutdown -h now",
-	"reboot_command": "reboot"
+	"reboot_command": "reboot",
+	"scripts_enabled": false
 }
