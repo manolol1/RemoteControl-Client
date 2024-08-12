@@ -8,7 +8,9 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
+// runs shutdown command specified in config.json
 app.get('/shutdown', (req, res) => {
+    console.log("Received Command: shutdown")
     exec(shutdown_command, (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
@@ -21,7 +23,9 @@ app.get('/shutdown', (req, res) => {
     });
 });
 
+// runs reboot command specified in config.json
 app.get('/reboot', (req, res) => {
+    console.log("Received Command: reboot")
     res.status(200).send('Client is rebooting...');
     exec(reboot_command, (error, stdout, stderr) => {
         if (error) {
@@ -35,10 +39,13 @@ app.get('/reboot', (req, res) => {
 });
 
 app.get('/ping', (req, res) => {
+    console.log("Received Command: ping")
     res.status(200).send('Client is online.');
 });
 
+// finds all .sh files in the scripts directory and returns their names as JSON
 app.get('/scripts', (req, res) => {
+    console.log("Received Command: scripts")
     // read all files in the scripts directory
     if (scripts_enabled) {
         fs.readdir(path.join(__dirname, 'scripts'), (err, files) => {
@@ -55,14 +62,16 @@ app.get('/scripts', (req, res) => {
     }
 });
 
+// executes the specified script and sends output through SSE Event Stream
 app.get('/scripts/:script', (req, res) => {
     if (scripts_enabled) {
         const script = req.params.script;
         const scriptPath = path.join(__dirname, 'scripts', script);
 
+        // keep connection alive for SSE
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
-            Connection: 'keep-alive',
+            'Connection': 'keep-alive',
             'Cache-Control': 'no-cache',
         });
 
@@ -75,16 +84,20 @@ app.get('/scripts/:script', (req, res) => {
 
             // execute script and stream output via SSE
             const child = spawn(scriptPath);
+
+            // send messages from stdout
             child.stdout.on('data', data => {
                 res.write('event: stdout\n');
                 res.write(`data: ${JSON.stringify({ message: data.toString() })}\n\n`);
             });
 
+            // send messages from stderr
             child.stderr.on('data', data => {
                 res.write('event: stderr\n');
                 res.write(`data: ${JSON.stringify({ message: data.toString() })}\n\n`);
             });
 
+            // send messages when an error occurs while running the script (e.g. permission denied)
             child.on('error', err => {
                 console.error(`Failed to start script: ${err}`);
                 res.write('event: err\n');
@@ -92,18 +105,22 @@ app.get('/scripts/:script', (req, res) => {
                 res.end();
             });
 
+            // send exit code when the script finishes
             child.on('exit', code => {
                 res.write('event: exit\n');
                 res.write(`data: ${JSON.stringify({ code })}\n\n`);
                 res.end();
             });
         } else {
+            // script doesn't exist
             res.write('event: err\n');
             res.write(`data: ${JSON.stringify({ message: 'Script not found.', code: 404 })}\n\n`);
             res.write('code: 404\n\n');
             res.end();
         }
     } else {
+        // scripts are disabled in config.json
+        console.log('Someone tried executing a script, but scripts are disabled.')
         res.write('event: err\n');
         res.write(`data: ${JSON.stringify({ message: 'Scripts disabled.', code: 403 })}\n\n`);
         res.write('code: 403\n\n');
