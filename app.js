@@ -62,8 +62,36 @@ app.get('/scripts', (req, res) => {
     }
 });
 
+app.get('/scripts/:script/show', (req, res) => {
+    if (scripts_enabled) {
+        const script = req.params.script;
+        const scriptPath = path.join(__dirname, 'scripts', script);
+    
+            // check if script exists
+            if (fs.existsSync(scriptPath)) {
+                console.log("Received Command: show script " + script);
+                // read script file
+                fs.readFile(scriptPath, 'utf8', (err, data) => {
+                    if (err) {
+                        console.error(err);
+                        res.status(500).send('An error occured while reading the script.');
+                        return;
+                    }
+                    // send script content
+                    res.status(200).send(data);
+                });
+            } else {
+                // script doesn't exist
+                res.status(404).send('Script not found.');
+            }
+        } else {
+            // scripts are disabled in config.json
+            res.status(403).send('Scripts are disabled.');
+        }
+})
+
 // executes the specified script and sends output through SSE Event Stream
-app.get('/scripts/:script', (req, res) => {
+app.get('/scripts/:script/run', (req, res) => {
     if (scripts_enabled) {
         const script = req.params.script;
         const scriptPath = path.join(__dirname, 'scripts', script);
