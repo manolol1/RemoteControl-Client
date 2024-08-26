@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const toml = require('toml');
+const yaml = require('yaml');
 
 const app = express();
 const server = http.createServer(app);
@@ -11,9 +11,11 @@ const server = http.createServer(app);
 // parse config file
 let config;
 try {
-    config = toml.parse(fs.readFileSync('./config.toml', 'utf-8'));
+    const file = fs.readFileSync('./config.yaml', 'utf8');
+    config = yaml.parse(file);
+    console.log(config);
 } catch (e) {
-    console.error("Config file parsing error on line " + e.line + ", column " + e.column + ": " + e.message);
+    console.error(e);
 }
 
 // runs shutdown command specified in config.json
