@@ -17,6 +17,7 @@
   "author": "Mario Ebenhofer",
   "license": "Apache-2.0",
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "toml": "^3.0.0"
   }
 }

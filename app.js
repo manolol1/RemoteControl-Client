@@ -1,17 +1,25 @@
 const { exec, spawn } = require('child_process');
-const { port, shutdown_command, reboot_command, scripts_enabled } = require('./config.json');
 const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const toml = require('toml');
 
 const app = express();
 const server = http.createServer(app);
 
+// parse config file
+let config;
+try {
+    config = toml.parse(fs.readFileSync('./config.toml', 'utf-8'));
+} catch (e) {
+    console.error("Config file parsing error on line " + e.line + ", column " + e.column + ": " + e.message);
+}
+
 // runs shutdown command specified in config.json
 app.get('/shutdown', (req, res) => {
     console.log("Received Command: shutdown")
-    exec(shutdown_command, (error, stdout, stderr) => {
+    exec(config.shutdown_command, (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
             res.status(500).send('An error occured while shutting down the client computer.');
@@ -27,7 +35,7 @@ app.get('/shutdown', (req, res) => {
 app.get('/reboot', (req, res) => {
     console.log("Received Command: reboot")
     res.status(200).send('Client is rebooting...');
-    exec(reboot_command, (error, stdout, stderr) => {
+    exec(config.reboot_command, (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
             res.status(500).send('An error occured while rebooting the client computer.');
@@ -47,7 +55,7 @@ app.get('/ping', (req, res) => {
 app.get('/scripts', (req, res) => {
     console.log("Received Command: scripts")
     // read all files in the scripts directory
-    if (scripts_enabled) {
+    if (config.scripts_enabled) {
         fs.readdir(path.join(__dirname, 'scripts'), (err, files) => {
             if (err) {
                 console.error(err);
@@ -63,36 +71,36 @@ app.get('/scripts', (req, res) => {
 });
 
 app.get('/scripts/:script/show', (req, res) => {
-    if (scripts_enabled) {
+    if (config.scripts_enabled) {
         const script = req.params.script;
         const scriptPath = path.join(__dirname, 'scripts', script);
-    
-            // check if script exists
-            if (fs.existsSync(scriptPath)) {
-                console.log("Received Command: show script " + script);
-                // read script file
-                fs.readFile(scriptPath, 'utf8', (err, data) => {
-                    if (err) {
-                        console.error(err);
-                        res.status(500).send('An error occured while reading the script.');
-                        return;
-                    }
-                    // send script content
-                    res.status(200).send(data);
-                });
-            } else {
-                // script doesn't exist
-                res.status(404).send('Script not found.');
-            }
+
+        // check if script exists
+        if (fs.existsSync(scriptPath)) {
+            console.log("Received Command: show script " + script);
+            // read script file
+            fs.readFile(scriptPath, 'utf8', (err, data) => {
+                if (err) {
+                    console.error(err);
+                    res.status(500).send('An error occured while reading the script.');
+                    return;
+                }
+                // send script content
+                res.status(200).send(data);
+            });
         } else {
-            // scripts are disabled in config.json
-            res.status(403).send('Scripts are disabled.');
+            // script doesn't exist
+            res.status(404).send('Script not found.');
         }
+    } else {
+        // scripts are disabled in config.json
+        res.status(403).send('Scripts are disabled.');
+    }
 })
 
 // executes the specified script and sends output through SSE Event Stream
 app.get('/scripts/:script/run', (req, res) => {
-    if (scripts_enabled) {
+    if (config.scripts_enabled) {
         const script = req.params.script;
         const scriptPath = path.join(__dirname, 'scripts', script);
 
@@ -155,6 +163,6 @@ app.get('/scripts/:script/run', (req, res) => {
     }
 });
 
-server.listen(port, () => {
-    console.log(`RemoteControl Client is listening on port ${port}...`);
+server.listen(config.port, () => {
+    console.log(`RemoteControl Client is listening on port ${config.port}...`);
 });
