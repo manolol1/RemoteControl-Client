@@ -5,11 +5,11 @@ This program must run on the computer that should be controlled. It provides an 
 
 ## Requirements
 * WakeOnLan enabled in the BIOS/UEFI
-* Git and Node.js
+* Git, Node.js and NPM
 
 ## Installation and Configuration
 1. Enable WakeOnLan in the BIOS/UEFI of your device. WakeOnLan is a standard, that allows waking up a computer by sending a "magic packet" to it. There are plenty of useful guides on the internet.
-2. Install the required programs (Git and Node.js) on the computer. This can usually be done with the default package manager of operating system.
+2. Install the required programs (Git and Node.js) on the computer. This can usually be done with the default package manager of your operating system.
 3. Clone the repository to your machine: `git clone https://github.com/manolol1/RemoteControl-Client.git`
 4. Copy the configuration file template: `cp config.yaml.template config.yaml`
 5. You can now make changes to the configuration file, if you want.
@@ -21,6 +21,9 @@ The client should now be ready to accept commands. You should also make sure tha
 Next, you should install one or more of the user-facing modules on another computer. 
 
 ## Configuration file (config.yaml)
+To create an initial configuration file, copy config.yaml.template into a new file with the name "config.yaml".
+The config values should be self-explanatory.
+
 Make sure that the configuration file is always valid. If the configuration file can't be parsed, the program will crash. After making changes, the program needs to be restarted.
 
 ## Scripts
